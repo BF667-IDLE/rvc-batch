@@ -151,6 +151,24 @@ print(f"Processed {summary['processed']} files in {summary['total_time']:.1f}s")
 | `protect` | Voiceless consonant protection (0.0-0.5) | `0.33` |
 | `crepe_hop_length` | Hop length for CREPE-based methods | `128` |
 
+## Google Colab Demo
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/BF667-IDLE/rvc-batch/blob/main/rvc_batch_demo.ipynb)
+
+Try it directly in your browser with a free GPU:
+
+1. Click the badge above to open the Colab notebook
+2. Go to **Runtime > Change runtime type** and select **GPU** (T4 is free)
+3. Run each cell in order - sections are collapsed for cleanliness
+
+The notebook covers the full workflow:
+- Clone repo & install dependencies
+- Download HuBERT + F0 predictor models automatically
+- Upload or link your RVC voice model
+- Single file inference with adjustable parameters (sliders)
+- Batch folder inference (upload ZIP or multiple files, download results as ZIP)
+- In-notebook audio playback of converted files
+
 ## License
 
 See [LICENSE](LICENSE) for details.
