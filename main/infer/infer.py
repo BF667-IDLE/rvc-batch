@@ -2,9 +2,9 @@ from multiprocessing import cpu_count
 from pathlib import Path
 
 import torch
-from fairseq import checkpoint_utils
 from scipy.io import wavfile
 
+from synth.fairseq import load_model as load_hubert_model
 from synth.models import (
     SynthesizerTrnMs256NSFsid,
     SynthesizerTrnMs256NSFsid_nono,
@@ -81,8 +81,7 @@ class Config:
 
 
 def load_hubert(device, is_half, model_path):
-    models, saved_cfg, task = checkpoint_utils.load_model_ensemble_and_task([model_path], suffix='', )
-    hubert = models[0]
+    hubert = load_hubert_model(model_path)
     hubert = hubert.to(device)
 
     if is_half:
