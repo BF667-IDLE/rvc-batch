@@ -184,14 +184,11 @@ class Generator:
                     "models", 
                     "rmvpe.pt"
                 ), 
-                #is_half=self.is_half, 
-                device=self.device, 
+                device=self.device
             )
 
         f0 = self.rmvpe.infer_from_audio_with_pitch(x, thred=0.03, f0_min=self.f0_min, f0_max=self.f0_max) if legacy else self.rmvpe.infer_from_audio(x, thred=0.03)
         return self._resize_f0(f0, p_len)
-    
-
     
     def get_f0_swipe(self, x, p_len):
         f0, t = swipe(
