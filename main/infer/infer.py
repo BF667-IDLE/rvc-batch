@@ -1,3 +1,5 @@
+import os
+import time
 from multiprocessing import cpu_count
 from pathlib import Path
 
@@ -13,6 +15,8 @@ from synth.models import (
 )
 from utils import load_audio
 from infer.pipeline import VC
+
+SUPPORTED_EXTENSIONS = {".wav", ".mp3", ".flac", ".ogg", ".opus", ".m4a", ".wma", ".aac", ".webm"}
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -133,3 +137,89 @@ def rvc_infer(index_path, index_rate, input_path, output_path, pitch_change, f0_
     if_f0 = cpt.get('f0', 1)
     audio_opt = vc.pipeline(hubert_model, net_g, 0, audio, input_path, times, pitch_change, f0_method, index_path, index_rate, if_f0, filter_radius, tgt_sr, 0, rms_mix_rate, version, protect, crepe_hop_length)
     wavfile.write(output_path, tgt_sr, audio_opt)
+
+
+def rvc_infer_batch(index_path, index_rate, input_path, output_path, pitch_change, f0_method, cpt, version, net_g, filter_radius, tgt_sr, rms_mix_rate, protect, crepe_hop_length, vc, hubert_model):
+    """Batch inference: process a single file or all audio files in a folder.
+
+    Args:
+        input_path: Path to a single audio file or a folder containing audio files.
+        output_path: Path to a single output file (if input is a file) or an output folder (if input is a folder).
+        All other arguments are the same as rvc_infer.
+
+    Returns:
+        dict: Summary with keys 'processed', 'failed', 'skipped', 'total_time'.
+    """
+    input_path = str(input_path)
+    output_path = str(output_path)
+
+    # Detect if input is a single file or a folder
+    if os.path.isfile(input_path):
+        # Single file mode - just delegate to rvc_infer
+        os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
+        rvc_infer(
+            index_path, index_rate, input_path, output_path,
+            pitch_change, f0_method, cpt, version, net_g,
+            filter_radius, tgt_sr, rms_mix_rate, protect,
+            crepe_hop_length, vc, hubert_model,
+        )
+        return {"processed": 1, "failed": 0, "skipped": 0, "total_time": 0}
+
+    # Folder mode
+    if not os.path.isdir(input_path):
+        raise FileNotFoundError(f"Input path not found: {input_path}")
+
+    # Create output directory if it doesn't exist
+    os.makedirs(output_path, exist_ok=True)
+
+    # Collect all supported audio files
+    audio_files = []
+    for entry in sorted(os.listdir(input_path)):
+        full_path = os.path.join(input_path, entry)
+        if os.path.isfile(full_path) and os.path.splitext(entry)[1].lower() in SUPPORTED_EXTENSIONS:
+            audio_files.append(full_path)
+
+    if not audio_files:
+        print(f"No supported audio files found in: {input_path}")
+        return {"processed": 0, "failed": 0, "skipped": 0, "total_time": 0}
+
+    print(f"Found {len(audio_files)} audio file(s) in: {input_path}")
+    summary = {"processed": 0, "failed": 0, "skipped": 0, "total_time": 0}
+    start_time = time.time()
+
+    for i, audio_file in enumerate(audio_files, 1):
+        # Build output file path: preserve filename, change extension to .wav
+        filename = os.path.splitext(os.path.basename(audio_file))[0] + ".wav"
+        out_file = os.path.join(output_path, filename)
+
+        # Skip if output already exists
+        if os.path.exists(out_file):
+            print(f"[{i}/{len(audio_files)}] Skipping (already exists): {os.path.basename(audio_file)}")
+            summary["skipped"] += 1
+            continue
+
+        print(f"[{i}/{len(audio_files)}] Processing: {os.path.basename(audio_file)}", end=" ", flush=True)
+        file_start = time.time()
+
+        try:
+            rvc_infer(
+                index_path, index_rate, audio_file, out_file,
+                pitch_change, f0_method, cpt, version, net_g,
+                filter_radius, tgt_sr, rms_mix_rate, protect,
+                crepe_hop_length, vc, hubert_model,
+            )
+            elapsed = time.time() - file_start
+            print(f"-> Done ({elapsed:.2f}s)")
+            summary["processed"] += 1
+        except Exception as e:
+            elapsed = time.time() - file_start
+            print(f"-> FAILED ({elapsed:.2f}s): {e}")
+            summary["failed"] += 1
+
+    summary["total_time"] = time.time() - start_time
+    print(
+        f"\nBatch complete: {summary['processed']} processed, "
+        f"{summary['failed']} failed, {summary['skipped']} skipped, "
+        f"total time: {summary['total_time']:.2f}s"
+    )
+    return summary
