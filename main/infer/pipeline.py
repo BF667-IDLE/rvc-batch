@@ -18,7 +18,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 now_dir = os.path.join(BASE_DIR, 'main')
 sys.path.append(now_dir)
 
-from predictor.generator import Generator
+from main.predictor.generator import Generator
 
 bh, ah = signal.butter(N=5, Wn=48, btype="high", fs=16000)
 

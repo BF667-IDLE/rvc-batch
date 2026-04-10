@@ -6,15 +6,15 @@ from pathlib import Path
 import torch
 from scipy.io import wavfile
 
-from synth.fairseq import load_model as load_hubert_model
-from synth.models import (
+from main.synth.fairseq import load_model as load_hubert_model
+from main.synth.models import (
     SynthesizerTrnMs256NSFsid,
     SynthesizerTrnMs256NSFsid_nono,
     SynthesizerTrnMs768NSFsid,
     SynthesizerTrnMs768NSFsid_nono,
 )
-from utils import load_audio
-from infer.pipeline import VC
+from main.utils import load_audio
+from main.infer.pipeline import VC
 
 SUPPORTED_EXTENSIONS = {".wav", ".mp3", ".flac", ".ogg", ".opus", ".m4a", ".wma", ".aac", ".webm"}
 

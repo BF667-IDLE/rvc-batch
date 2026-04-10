@@ -12,11 +12,11 @@ from scipy.signal import medfilt
 
 sys.path.append(os.getcwd())
 
-from predictor.rmvpe import RMVPE
-from predictor.fcpe import FCPE
-from utils import *
-from predictor.swipe import swipe, stonemask
-from predictor.crepe import CREPE, mean, median
+from main.predictor.rmvpe import RMVPE
+from main.predictor.fcpe import FCPE
+from main.utils import *
+from main.predictor.swipe import swipe, stonemask
+from main.predictor.crepe import CREPE, mean, median
 
 @nb.jit(nopython=True)
 def post_process(f0, f0_up_key, f0_mel_min, f0_mel_max):

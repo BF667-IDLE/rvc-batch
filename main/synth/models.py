@@ -3,15 +3,15 @@ from time import time as ttime
 import torch
 from torch import nn
 from torch.nn import functional as F
-from synth import modules
-from synth import attentions
-from synth import commons
-from synth.commons import init_weights, get_padding
+from main.synth import modules
+from main.synth import attentions
+from main.synth import commons
+from main.synth.commons import init_weights, get_padding
 from torch.nn import Conv1d, ConvTranspose1d, AvgPool1d, Conv2d
 from torch.nn.utils import weight_norm, remove_weight_norm, spectral_norm
-from synth.commons import init_weights
+from main.synth.commons import init_weights
 import numpy as np
-from synth import commons
+from main.synth import commons
 
 
 class TextEncoder256(nn.Module):
