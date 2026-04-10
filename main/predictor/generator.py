@@ -184,7 +184,7 @@ class Generator:
                     "models", 
                     "rmvpe.pt"
                 ), 
-                is_half=self.is_half, 
+                #is_half=self.is_half, 
                 device=self.device, 
             )
 
