@@ -6,7 +6,7 @@ A simple, high-quality voice conversion tool focused on ease of use and performa
 
 - **Single file inference** - Convert individual audio files with full parameter control
 - **Batch folder inference** - Process an entire folder of audio files in one call
-- **Multiple F0 methods** - PM, CREPE (tiny/small/medium/large/full), Mangio-CREPE, FCPE, RMVPE, SWIPE, YIN, PYIN, Harvest, DIO, and hybrid combinations
+- **Multiple F0 methods** - PM, CREPE (tiny/small/medium/large/full), Mangio-CREPE, FCPE, RMVPE, DJCM, SWIPE, YIN, PYIN, Harvest, DIO, and hybrid combinations
 - **RVC v1 & v2 support** - Compatible with both model versions
 - **Multiple device support** - CUDA (NVIDIA), MPS (Apple Silicon), and CPU fallback
 - **Automatic GPU memory config** - Adapts processing parameters based on available VRAM
@@ -30,6 +30,7 @@ main/
 │   ├── rmvpe.py           # RMVPE pitch estimator
 │   ├── crepe.py           # CREPE pitch estimator
 │   ├── fcpe.py            # FCPE pitch estimator
+│   ├── djcm.py            # DJCM pitch estimator (U-Net + BiGRU)
 │   └── swipe.py           # SWIPE pitch estimator
 └── utils.py               # Audio loading, auto-download, helpers
 ```
@@ -132,6 +133,7 @@ print(f"Processed {summary['processed']} files in {summary['total_time']:.1f}s")
 | `crepe-full` / `crepe-tiny` / `crepe-small` / `crepe-medium` / `crepe-large` | CREPE variants (balance speed vs quality) |
 | `mangio-crepe-full` / etc. | Mangio-CREPE variants |
 | `fcpe` / `fcpe-legacy` | FCPE pitch estimator |
+| `djcm` | DJCM (U-Net + BiGRU, Vietnamese-RVC) |
 | `swipe` | SWIPE algorithm |
 | `pm` | Praat parselmouth |
 | `harvest` | WORLD harvest |
