@@ -5,15 +5,13 @@ import gradio as gr
 
 from main.infer.infer import Config, load_hubert, get_vc, rvc_infer
 from main.utils import check_predictors, check_embedders, load_audio
+from main.config.variable import F0_ALL_METHODS
 
 # ─── Globals ───
 hubert_model = None
 cpt = version = net_g = tgt_sr = vc = None
 
-F0_METHODS = [
-    "rmvpe", "crepe-full", "crepe-tiny", "crepe-small", "crepe-medium", "crepe-large",
-    "fcpe", "fcpe-legacy", "swipe", "pm", "harvest", "dio", "yin", "pyin", "djcm",
-]
+F0_METHODS = F0_ALL_METHODS
 
 
 def load_models(model_path, index_path, f0_method):

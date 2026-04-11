@@ -5,7 +5,7 @@ import scipy.stats
 
 import numpy as np
 
-CENTS_PER_BIN, MAX_FMAX, PITCH_BINS, SAMPLE_RATE, WINDOW_SIZE = 20, 2006, 360, 16000, 1024  
+from main.config.variable import CENTS_PER_BIN, MAX_FMAX, PITCH_BINS, SAMPLE_RATE, WINDOW_SIZE
 
 def mean(signals, win_length=9):
     assert signals.dim() == 2

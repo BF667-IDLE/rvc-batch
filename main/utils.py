@@ -10,6 +10,8 @@ import numpy as np
 import soundfile as sf
 import torch.nn.functional as F
 
+from main.config.variable import SAMPLE_RATE, PREDICTOR_MODEL_DICT, HF_PREDICTOR_BASE, HF_EMBEDDER_BASE
+
 sys.path.append(os.getcwd())
 
 
@@ -40,29 +42,18 @@ def HF_download_file(url, output_path=None):
 def check_predictors(method):
     def download(predictors):
         if not os.path.exists(os.path.join("models", predictors)): 
-           HF_download_file(codecs.decode("uggcf://uhttvatsnpr.pb/NauC/Ivrganzrfr-EIP-Cebwrpg/erfbyir/znva/cerqvpgbef/", "rot13") + predictors, os.path.join("models", predictors))
+           HF_download_file(HF_PREDICTOR_BASE + predictors, os.path.join("models", predictors))
 
-    model_dict = {
-        **dict.fromkeys(["rmvpe", "rmvpe-legacy"], "rmvpe.pt"), 
-        **dict.fromkeys(["fcpe"], "fcpe.pt"), 
-        **dict.fromkeys(["fcpe-legacy"], "fcpe_legacy.pt"), 
-        **dict.fromkeys(["crepe-full", "mangio-crepe-full"], "crepe_full.pth"), 
-        **dict.fromkeys(["crepe-large", "mangio-crepe-large"], "crepe_large.pth"), 
-        **dict.fromkeys(["crepe-medium", "mangio-crepe-medium"], "crepe_medium.pth"), 
-        **dict.fromkeys(["crepe-small", "mangio-crepe-small"], "crepe_small.pth"), 
-        **dict.fromkeys(["crepe-tiny", "mangio-crepe-tiny"], "crepe_tiny.pth"), 
-    }
-
-    if method in model_dict: download(model_dict[method])
+    if method in PREDICTOR_MODEL_DICT: download(PREDICTOR_MODEL_DICT[method])
 
 def check_embedders(hubert="hubert_base"):
     if hubert in ["hubert_base"]:
         hubert += ".pt"
         model_path = os.path.join("models", hubert)
         if not os.path.exists(model_path): 
-            HF_download_file("".join([codecs.decode("uggcf://uhttvatsnpr.pb/NauC/Ivrganzrfr-EIP-Cebwrpg/erfbyir/znva/rzorqqref/", "rot13"), "fairseq/", hubert]), model_path)
+            HF_download_file("".join([HF_EMBEDDER_BASE, "fairseq/", hubert]), model_path)
 
-def load_audio(file, sample_rate=16000):
+def load_audio(file, sample_rate=SAMPLE_RATE):
     try:
         file = file.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
         if not os.path.isfile(file): raise FileNotFoundError(f"[ERROR] Not found audio: {file}")

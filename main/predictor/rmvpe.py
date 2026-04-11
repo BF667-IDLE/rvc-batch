@@ -7,8 +7,7 @@ import torch.nn.functional as F
 from librosa.filters import mel
 from scipy.signal import medfilt
 
-N_MELS = 128
-N_CLASS = 360
+from main.config.variable import N_MELS, N_CLASS, SAMPLE_RATE, WINDOW_SIZE, HOP_LENGTH, RMVPE_MEL_FMIN, RMVPE_MEL_FMAX
 
 
 def autopad(k, p=None):
@@ -631,7 +630,7 @@ class RMVPE:
         model.eval()
         self.model = model.to(device)
 
-        self.mel_extractor = MelSpectrogram(N_MELS, 16000, 1024, 160, None, 30, 8000).to(device)
+        self.mel_extractor = MelSpectrogram(N_MELS, SAMPLE_RATE, WINDOW_SIZE, HOP_LENGTH, None, RMVPE_MEL_FMIN, RMVPE_MEL_FMAX).to(device)
         cents_mapping = 20 * np.arange(N_CLASS) + 1997.3794084376191
         self.cents_mapping = np.pad(cents_mapping, (4, 4))
 

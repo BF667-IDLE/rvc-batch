@@ -14,13 +14,15 @@ import traceback
 from scipy import signal
 from torch import Tensor
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-now_dir = os.path.join(BASE_DIR, 'main')
-sys.path.append(now_dir)
+from main.config.variable import (
+    BASE_DIR, MAIN_DIR, BH, AH, SAMPLE_RATE, HOP_LENGTH, F0_MIN, F0_MAX,
+    FRAME_PERIOD, F0_GENERATOR_METHODS, F0_CREPE_METHOD_MAP, FAISS_SEARCH_K,
+    MAX_INT16, HUBERT_V1_OUTPUT_LAYER, HUBERT_V2_OUTPUT_LAYER, FEATURE_SCALE_FACTOR,
+)
+
+sys.path.append(MAIN_DIR)
 
 from main.predictor.generator import Generator
-
-bh, ah = signal.butter(N=5, Wn=48, btype="high", fs=16000)
 
 input_audio_path2wav = {}
 
@@ -69,8 +71,8 @@ class VC(object):
             config.x_max,
             config.is_half,
         )
-        self.sr = 16000  # hubert input sample rate
-        self.window = 160  # frame points
+        self.sr = SAMPLE_RATE  # hubert input sample rate
+        self.window = HOP_LENGTH  # frame points
         self.t_pad = self.sr * self.x_pad  # pad time per segment
         self.t_pad_tgt = tgt_sr * self.x_pad
         self.t_pad2 = self.t_pad * 2
@@ -81,8 +83,8 @@ class VC(object):
         self.generator = Generator(
             sample_rate=self.sr,
             hop_length=self.window,
-            f0_min=50,
-            f0_max=1100,
+            f0_min=F0_MIN,
+            f0_max=F0_MAX,
             is_half=self.is_half,
             device=self.device,
         )
@@ -99,29 +101,11 @@ class VC(object):
         inp_f0=None,
     ):
         # Methods supported by predictor.generator.Generator
-        generator_methods = {
-            "pm", "crepe-tiny", "crepe-small", "crepe-medium", "crepe-large", "crepe-full",
-            "mangio-crepe-tiny", "mangio-crepe-small", "mangio-crepe-medium", "mangio-crepe-large", "mangio-crepe-full",
-            "fcpe", "fcpe-legacy", "rmvpe", "rmvpe-legacy", "yin", "pyin", "swipe", "djcm",
-        }
+        generator_methods = F0_GENERATOR_METHODS
 
         if f0_method in generator_methods:
             # Map legacy crepe method names to generator naming
-            method_map = {
-                "crepe": "crepe-full",
-                "crepe-tiny": "crepe-tiny",
-                "crepe-small": "crepe-small",
-                "crepe-medium": "crepe-medium",
-                "crepe-large": "crepe-large",
-                "crepe-full": "crepe-full",
-                "mangio-crepe": "mangio-crepe-full",
-                "mangio-crepe-tiny": "mangio-crepe-tiny",
-                "mangio-crepe-small": "mangio-crepe-small",
-                "mangio-crepe-medium": "mangio-crepe-medium",
-                "mangio-crepe-large": "mangio-crepe-large",
-                "mangio-crepe-full": "mangio-crepe-full",
-            }
-            gen_method = method_map.get(f0_method, f0_method)
+            gen_method = F0_CREPE_METHOD_MAP.get(f0_method, f0_method)
 
             f0_mel, f0_raw = self.generator.calculator(
                 gen_method, x,
@@ -144,8 +128,8 @@ class VC(object):
                 shape = f0bak[self.x_pad * tf0 : self.x_pad * tf0 + len(replace_f0)].shape[0]
                 f0bak[self.x_pad * tf0 : self.x_pad * tf0 + len(replace_f0)] = replace_f0[:shape]
                 # Re-compute mel from adjusted f0bak
-                f0_mel_min = 1127 * np.log(1 + 50 / 700)
-                f0_mel_max = 1127 * np.log(1 + 1100 / 700)
+                f0_mel_min = 1127 * np.log(1 + F0_MIN / 700)
+                f0_mel_max = 1127 * np.log(1 + F0_MAX / 700)
                 f0_mel = 1127 * np.log(1 + f0bak / 700)
                 f0_mel[f0_mel > 0] = (f0_mel[f0_mel > 0] - f0_mel_min) * 254 / (f0_mel_max - f0_mel_min) + 1
                 f0_mel[f0_mel <= 1] = 1
@@ -179,23 +163,21 @@ class VC(object):
     ):
         global input_audio_path2wav
         time_step = self.window / self.sr * 1000
-        f0_min = 50
-        f0_max = 1100
-        f0_mel_min = 1127 * np.log(1 + f0_min / 700)
-        f0_mel_max = 1127 * np.log(1 + f0_max / 700)
+        f0_mel_min = 1127 * np.log(1 + F0_MIN / 700)
+        f0_mel_max = 1127 * np.log(1 + F0_MAX / 700)
 
         if f0_method == "harvest":
             input_audio_path2wav[input_audio_path] = x.astype(np.double)
-            f0 = cache_harvest_f0(input_audio_path, self.sr, f0_max, f0_min, 10)
+            f0 = cache_harvest_f0(input_audio_path, self.sr, F0_MAX, F0_MIN, FRAME_PERIOD)
             if filter_radius > 2:
                 f0 = signal.medfilt(f0, 3)
         elif f0_method == "dio":
             f0, t = pyworld.dio(
                 x.astype(np.double),
                 fs=self.sr,
-                f0_ceil=f0_max,
-                f0_floor=f0_min,
-                frame_period=10,
+                f0_ceil=F0_MAX,
+                f0_floor=F0_MIN,
+                frame_period=FRAME_PERIOD,
             )
             f0 = pyworld.stonemask(x.astype(np.double), f0, t, self.sr)
             f0 = signal.medfilt(f0, 3)
@@ -205,8 +187,8 @@ class VC(object):
                 f0_method,
                 input_audio_path,
                 x,
-                f0_min,
-                f0_max,
+                F0_MIN,
+                F0_MAX,
                 p_len,
                 filter_radius,
                 crepe_hop_length,
@@ -279,7 +261,7 @@ class VC(object):
                         f0, [[pad_size, p_len - len(f0) - pad_size]], mode="constant"
                     )
             elif method == "harvest":
-                f0 = cache_harvest_f0(input_audio_path, self.sr, f0_max, f0_min, 10)
+                f0 = cache_harvest_f0(input_audio_path, self.sr, F0_MAX, F0_MIN, FRAME_PERIOD)
                 if filter_radius > 2:
                     f0 = signal.medfilt(f0, 3)
                 f0 = f0[1:]
@@ -287,9 +269,9 @@ class VC(object):
                 f0, t = pyworld.dio(
                     x.astype(np.double),
                     fs=self.sr,
-                    f0_ceil=f0_max,
-                    f0_floor=f0_min,
-                    frame_period=10,
+                    f0_ceil=F0_MAX,
+                    f0_floor=F0_MIN,
+                    frame_period=FRAME_PERIOD,
                 )
                 f0 = pyworld.stonemask(x.astype(np.double), f0, t, self.sr)
                 f0 = signal.medfilt(f0, 3)
@@ -365,7 +347,7 @@ class VC(object):
         inputs = {
             "source": feats.to(self.device),
             "padding_mask": padding_mask,
-            "output_layer": 9 if version == "v1" else 12,
+            "output_layer": HUBERT_V1_OUTPUT_LAYER if version == "v1" else HUBERT_V2_OUTPUT_LAYER,
         }
         t0 = ttime()
         with torch.no_grad():
@@ -382,7 +364,7 @@ class VC(object):
             if self.is_half:
                 npy = npy.astype("float32")
 
-            score, ix = index.search(npy, k=8)
+            score, ix = index.search(npy, k=FAISS_SEARCH_K)
             weight = np.square(1 / score)
             weight /= weight.sum(axis=1, keepdims=True)
             npy = np.sum(big_npy[ix] * np.expand_dims(weight, axis=2), axis=1)
@@ -394,9 +376,9 @@ class VC(object):
                 + (1 - index_rate) * feats
             )
 
-        feats = F.interpolate(feats.permute(0, 2, 1), scale_factor=2).permute(0, 2, 1)
+        feats = F.interpolate(feats.permute(0, 2, 1), scale_factor=FEATURE_SCALE_FACTOR).permute(0, 2, 1)
         if protect < 0.5 and pitch != None and pitchf != None:
-            feats0 = F.interpolate(feats0.permute(0, 2, 1), scale_factor=2).permute(
+            feats0 = F.interpolate(feats0.permute(0, 2, 1), scale_factor=FEATURE_SCALE_FACTOR).permute(
                 0, 2, 1
             )
         t1 = ttime()
@@ -470,7 +452,7 @@ class VC(object):
                 index = big_npy = None
         else:
             index = big_npy = None
-        audio = signal.filtfilt(bh, ah, audio)
+        audio = signal.filtfilt(BH, AH, audio)
         audio_pad = np.pad(audio, (self.window // 2, self.window // 2), mode="reflect")
         opt_ts = []
         if audio_pad.shape[0] > self.t_max:
@@ -597,13 +579,13 @@ class VC(object):
             )
         audio_opt = np.concatenate(audio_opt)
         if rms_mix_rate != 1:
-            audio_opt = change_rms(audio, 16000, audio_opt, tgt_sr, rms_mix_rate)
-        if resample_sr >= 16000 and tgt_sr != resample_sr:
+            audio_opt = change_rms(audio, SAMPLE_RATE, audio_opt, tgt_sr, rms_mix_rate)
+        if resample_sr >= SAMPLE_RATE and tgt_sr != resample_sr:
             audio_opt = librosa.resample(
                 audio_opt, orig_sr=tgt_sr, target_sr=resample_sr
             )
         audio_max = np.abs(audio_opt).max() / 0.99
-        max_int16 = 32768
+        max_int16 = MAX_INT16
         if audio_max > 1:
             max_int16 /= audio_max
         audio_opt = (audio_opt * max_int16).astype(np.int16)

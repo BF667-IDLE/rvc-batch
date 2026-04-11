@@ -15,6 +15,8 @@ A simple, high-quality voice conversion tool focused on ease of use and performa
 
 ```
 main/
+├── config/
+│   └── variable.py       # Global config, constants, paths
 ├── infer/
 │   ├── infer.py          # Config, model loading, single & batch inference
 │   └── pipeline.py       # VC pipeline (f0 extraction, feature processing)

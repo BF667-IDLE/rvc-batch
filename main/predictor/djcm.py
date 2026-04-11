@@ -10,7 +10,7 @@ from einops.layers.torch import Rearrange
 
 sys.path.append(os.getcwd())
 
-SAMPLE_RATE, WINDOW_LENGTH, N_CLASS = 16000, 1024, 360
+from main.config.variable import SAMPLE_RATE as SAMPLE_RATE, DJCM_WINDOW_LENGTH as WINDOW_LENGTH, DJCM_N_CLASS as N_CLASS
 
 
 # ─── Utils ───

@@ -15,10 +15,7 @@ from main.synth.models import (
 )
 from main.utils import load_audio
 from main.infer.pipeline import VC
-
-SUPPORTED_EXTENSIONS = {".wav", ".mp3", ".flac", ".ogg", ".opus", ".m4a", ".wma", ".aac", ".webm"}
-
-BASE_DIR = Path(__file__).resolve().parent.parent
+from main.config.variable import SUPPORTED_EXTENSIONS, BASE_DIR
 
 
 class Config:
@@ -132,7 +129,8 @@ def get_vc(device, is_half, config, model_path):
 
 
 def rvc_infer(index_path, index_rate, input_path, output_path, pitch_change, f0_method, cpt, version, net_g, filter_radius, tgt_sr, rms_mix_rate, protect, crepe_hop_length, vc, hubert_model):
-    audio = load_audio(input_path, 16000)
+    from main.config.variable import SAMPLE_RATE
+    audio = load_audio(input_path, SAMPLE_RATE)
     times = [0, 0, 0]
     if_f0 = cpt.get('f0', 1)
     audio_opt = vc.pipeline(hubert_model, net_g, 0, audio, input_path, times, pitch_change, f0_method, index_path, index_rate, if_f0, filter_radius, tgt_sr, 0, rms_mix_rate, version, protect, crepe_hop_length)
