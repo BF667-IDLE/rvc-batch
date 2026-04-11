@@ -171,6 +171,19 @@ The notebook covers the full workflow:
 - Batch folder inference (upload ZIP or multiple files, download results as ZIP)
 - In-notebook audio playback of converted files
 
+## Gradio Web UI
+
+```bash
+python app.py
+```
+
+A simple web interface powered by [Gradio](https://github.com/BF667-IDLE/gradio):
+
+1. Run `python app.py` — it will auto-detect your device (CUDA/MPS/CPU)
+2. Click **Load Model** with your voice model path (`.pth`) and optionally an index file (`.index`)
+3. Upload an audio file, adjust sliders, and click **Convert**
+4. Listen to the result directly in the browser
+
 ## License
 
 See [LICENSE](LICENSE) for details.
