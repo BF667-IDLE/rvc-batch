@@ -17,6 +17,7 @@ from main.predictor.fcpe import FCPE
 from main.utils import *
 from main.predictor.swipe import swipe, stonemask
 from main.predictor.crepe import CREPE, mean, median
+from main.predictor.djcm import DJCM
 
 @nb.jit(nopython=True)
 def post_process(f0, f0_up_key, f0_mel_min, f0_mel_max):
@@ -87,7 +88,8 @@ class Generator:
             "rmvpe-legacy": lambda: self.get_f0_rmvpe(x, p_len, legacy=True), 
             "yin": lambda: self.get_f0_yin(x, p_len, mode="yin"), 
             "pyin": lambda: self.get_f0_yin(x, p_len, mode="pyin"), 
-            "swipe": lambda: self.get_f0_swipe(x, p_len)
+            "swipe": lambda: self.get_f0_swipe(x, p_len),
+            "djcm": lambda: self.get_f0_djcm(x, p_len)
         }[f0_method]()
     
     def get_f0_pm(self, x, p_len):
@@ -209,16 +211,29 @@ class Generator:
             p_len
         )
     
+    def get_f0_djcm(self, x, p_len):
+        if not hasattr(self, "djcm"):
+            self.djcm = DJCM(
+                os.path.join("models", "djcm.pt"),
+                device=self.device,
+                is_half=self.device != "cpu",
+            )
+
+        f0 = self.djcm.infer_from_audio_with_pitch(
+            x, thred=0.03, f0_min=self.f0_min, f0_max=self.f0_max
+        )
+        return self._resize_f0(f0, p_len)
+
     def get_f0_yin(self, x, p_len, mode="yin"):
         self.if_yin = mode == "yin"
         self.yin = yin if self.if_yin else pyin
 
         f0 = self.yin(
-            x.astype(np.float32), 
-            sr=self.sample_rate, 
-            fmin=self.f0_min, 
-            fmax=self.f0_max, 
-            hop_length=self.hop_length
+            x.astype(np.float32),
+            sr=self.sample_rate,
+            fmin=self.f0_min,
+            fmax=self.f0_max,
+            hop_length=self.hop_length,
         )
 
         if not self.if_yin: f0 = f0[0]

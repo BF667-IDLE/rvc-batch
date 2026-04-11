@@ -102,7 +102,7 @@ class VC(object):
         generator_methods = {
             "pm", "crepe-tiny", "crepe-small", "crepe-medium", "crepe-large", "crepe-full",
             "mangio-crepe-tiny", "mangio-crepe-small", "mangio-crepe-medium", "mangio-crepe-large", "mangio-crepe-full",
-            "fcpe", "fcpe-legacy", "rmvpe", "rmvpe-legacy", "yin", "pyin", "swipe",
+            "fcpe", "fcpe-legacy", "rmvpe", "rmvpe-legacy", "yin", "pyin", "swipe", "djcm",
         }
 
         if f0_method in generator_methods:
