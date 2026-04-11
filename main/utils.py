@@ -10,7 +10,7 @@ import numpy as np
 import soundfile as sf
 import torch.nn.functional as F
 
-from main.config.variable import SAMPLE_RATE, PREDICTOR_MODEL_DICT, HF_PREDICTOR_BASE, HF_EMBEDDER_BASE
+from main.config.variable import SAMPLE_RATE, PREDICTOR_MODEL_DICT, HF_PREDICTOR_BASE, HF_EMBEDDER_BASE, AUTOTUNE_SCALES
 
 sys.path.append(os.getcwd())
 
@@ -72,13 +72,58 @@ def load_audio(file, sample_rate=SAMPLE_RATE):
 
 class Autotune:
     def __init__(self, ref_freqs):
-        self.ref_freqs = ref_freqs
+        self.ref_freqs = np.array(ref_freqs)
         self.note_dict = self.ref_freqs
+        # Precompute MIDI note numbers for each ref frequency (A4 = 69)
+        self.ref_midi = 12.0 * np.log2(self.ref_freqs / 440.0) + 69.0
 
-    def autotune_f0(self, f0, f0_autotune_strength):
+    def _get_target_freqs(self, key=None, scale=None):
+        """Get filtered reference frequencies matching the given key and scale.
+
+        Args:
+            key: Key name as string (e.g. 'C', 'F#') or semitone index 0-11. None = chromatic.
+            scale: Scale name from AUTOTUNE_SCALES or list of semitone intervals. None = chromatic.
+        """
+        if key is None and scale is None:
+            return self.note_dict
+
+        # Resolve key to semitone index
+        if isinstance(key, str):
+            key_map = {"C": 0, "C#": 1, "Db": 1, "D": 2, "D#": 3, "Eb": 3, "E": 4,
+                       "F": 5, "F#": 6, "Gb": 6, "G": 7, "G#": 8, "Ab": 8,
+                       "A": 9, "A#": 10, "Bb": 10, "B": 11}
+            key = key_map.get(key, 0)
+
+        # Resolve scale to interval list
+        if isinstance(scale, str):
+            scale = AUTOTUNE_SCALES.get(scale, AUTOTUNE_SCALES["chromatic"])
+
+        # Compute allowed note classes: (root + interval) % 12
+        allowed = set((key + iv) % 12 for iv in scale)
+
+        # Filter ref_freqs to only those in allowed note classes
+        mask = np.array([(int(round(m)) % 12) in allowed for m in self.ref_midi])
+        filtered = self.ref_freqs[mask]
+
+        return filtered if len(filtered) > 0 else self.note_dict
+
+    def autotune_f0(self, f0, f0_autotune_strength, key=None, scale=None):
+        """Snap f0 values to the nearest note in the given key + scale.
+
+        Args:
+            f0: numpy array of pitch frequencies.
+            f0_autotune_strength: 0.0 = no correction, 1.0 = full snap.
+            key: Musical key (e.g. 'C', 'F#') or None for chromatic.
+            scale: Scale name (e.g. 'major', 'minor', 'blues') or None for chromatic.
+        """
+        targets = self._get_target_freqs(key, scale)
         autotuned_f0 = np.zeros_like(f0)
 
         for i, freq in enumerate(f0):
-            autotuned_f0[i] = freq + (min(self.note_dict, key=lambda x: abs(x - freq)) - freq) * f0_autotune_strength
+            if freq <= 0:
+                autotuned_f0[i] = freq
+                continue
+            nearest = targets[np.argmin(np.abs(targets - freq))]
+            autotuned_f0[i] = freq + (nearest - freq) * f0_autotune_strength
 
         return autotuned_f0

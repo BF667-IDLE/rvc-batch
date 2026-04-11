@@ -5,13 +5,14 @@ import gradio as gr
 
 from main.infer.infer import Config, load_hubert, get_vc, rvc_infer
 from main.utils import check_predictors, check_embedders, load_audio
-from main.config.variable import F0_ALL_METHODS
+from main.config.variable import F0_ALL_METHODS, AUTOTUNE_KEYS, AUTOTUNE_SCALES
 
 # ─── Globals ───
 hubert_model = None
 cpt = version = net_g = tgt_sr = vc = None
 
 F0_METHODS = F0_ALL_METHODS
+AUTOTUNE_SCALE_NAMES = list(AUTOTUNE_SCALES.keys())
 
 
 def load_models(model_path, index_path, f0_method):
@@ -43,7 +44,7 @@ def load_models(model_path, index_path, f0_method):
     return f"Loaded: {os.path.basename(model_path)} ({version}, {tgt_sr}Hz)"
 
 
-def inference(audio, pitch_change, f0_method, index_rate, filter_radius, rms_mix_rate, protect):
+def inference(audio, pitch_change, f0_method, index_rate, filter_radius, rms_mix_rate, protect, f0_autotune, autotune_strength, autotune_key, autotune_scale):
     global hubert_model, cpt, version, net_g, tgt_sr, vc
 
     if hubert_model is None:
@@ -60,6 +61,10 @@ def inference(audio, pitch_change, f0_method, index_rate, filter_radius, rms_mix
     from scipy.io import wavfile
     wavfile.write(input_path, audio[0], audio[1])
 
+    # Resolve autotune params
+    at_key = autotune_key if autotune_key != "Auto" else None
+    at_scale = autotune_scale if f0_autotune else None
+
     t0 = time.time()
     rvc_infer(
         index_path="", index_rate=index_rate,
@@ -69,12 +74,15 @@ def inference(audio, pitch_change, f0_method, index_rate, filter_radius, rms_mix
         filter_radius=filter_radius, tgt_sr=tgt_sr,
         rms_mix_rate=rms_mix_rate, protect=protect,
         crepe_hop_length=128, vc=vc, hubert_model=hubert_model,
+        f0_autotune=f0_autotune, f0_autotune_strength=autotune_strength,
+        autotune_key=at_key, autotune_scale=at_scale,
     )
     elapsed = time.time() - t0
 
     from scipy.io import wavfile as wf
     sr, data = wf.read(output_path)
-    info = f"Done in {elapsed:.1f}s | {version} | {tgt_sr}Hz | {f0_method}"
+    at_info = f" | Autotune: {autotune_key} {autotune_scale}" if f0_autotune else ""
+    info = f"Done in {elapsed:.1f}s | {version} | {tgt_sr}Hz | {f0_method}{at_info}"
     return (tgt_sr, data), info
 
 
@@ -100,13 +108,18 @@ with gr.Blocks(title="RVC-Batch", analytics_enabled=False) as demo:
             filter_radius = gr.Slider(0, 7, value=3, step=1, label="Filter radius")
             rms_mix_rate = gr.Slider(0, 1, value=0.25, step=0.05, label="RMS mix rate")
             protect = gr.Slider(0, 0.5, value=0.33, step=0.01, label="Protect")
+        with gr.Row():
+            f0_autotune = gr.Checkbox(label="Autotune", value=False)
+            autotune_strength = gr.Slider(0, 1, value=1.0, step=0.05, label="Autotune Strength")
+            autotune_key = gr.Dropdown(["Auto"] + AUTOTUNE_KEYS, value="Auto", label="Key", interactive=True)
+            autotune_scale = gr.Dropdown(AUTOTUNE_SCALE_NAMES, value="major", label="Scale", interactive=True)
         btn_infer = gr.Button("Convert", variant="primary")
         audio_out = gr.Audio(label="Output audio", type="numpy")
         infer_info = gr.Textbox(label="Info", interactive=False)
 
     btn_load.click(load_models, [model_path, index_path, f0_method], load_status)
     btn_infer.click(inference,
-        [audio_in, pitch_change, f0_method, index_rate, filter_radius, rms_mix_rate, protect],
+        [audio_in, pitch_change, f0_method, index_rate, filter_radius, rms_mix_rate, protect, f0_autotune, autotune_strength, autotune_key, autotune_scale],
         [audio_out, infer_info],
     )
 

@@ -44,12 +44,12 @@ class Generator:
         self.autotune = Autotune(self.ref_freqs)
         self.note_dict = self.autotune.note_dict
 
-    def calculator(self, f0_method, x, f0_up_key = 0, p_len = None, filter_radius = 3, f0_autotune = False, f0_autotune_strength = 1):
+    def calculator(self, f0_method, x, f0_up_key = 0, p_len = None, filter_radius = 3, f0_autotune = False, f0_autotune_strength = 1, autotune_key = None, autotune_scale = None):
         if p_len is None: p_len = x.shape[0] // self.window
         f0 = self.compute_f0(f0_method, x, p_len, filter_radius if filter_radius % 2 != 0 else filter_radius + 1)
 
         if isinstance(f0, tuple): f0 = f0[0]
-        if f0_autotune: f0 = Autotune.autotune_f0(self, f0, f0_autotune_strength)
+        if f0_autotune: f0 = self.autotune.autotune_f0(f0, f0_autotune_strength, key=autotune_key, scale=autotune_scale)
 
         return post_process(
             f0, 

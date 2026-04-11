@@ -10,6 +10,7 @@ A simple, high-quality voice conversion tool focused on ease of use and performa
 - **RVC v1 & v2 support** - Compatible with both model versions
 - **Multiple device support** - CUDA (NVIDIA), MPS (Apple Silicon), and CPU fallback
 - **Automatic GPU memory config** - Adapts processing parameters based on available VRAM
+- **Autotune with key + scale** - Snap pitch to major, minor, blues, pentatonic, and more
 
 ## Project Structure
 
@@ -143,6 +144,34 @@ print(f"Processed {summary['processed']} files in {summary['total_time']:.1f}s")
 | `yin` / `pyin` | YIN / pYIN algorithms |
 | `hybrid[pm+crepe]` | Hybrid median of multiple methods |
 
+### Autotune with Key + Scale
+
+Snap extracted pitch to a specific musical key and scale:
+
+```python
+rvc_infer(
+    # ... other params ...
+    f0_autotune=True,
+    f0_autotune_strength=1.0,   # 0.0 = no correction, 1.0 = full snap
+    autotune_key="C",           # C, C#, D, D#, E, F, F#, G, G#, A, A#, B
+    autotune_scale="major",     # major, minor, harmonic minor, melodic minor,
+                               # pentatonic major, pentatonic minor, blues, chromatic
+)
+```
+
+**Supported scales:**
+
+| Scale | Notes (relative to root) |
+|-------|--------------------------|
+| `chromatic` | All 12 semitones |
+| `major` | 1, 2, 3, 4, 5, 6, 7 |
+| `minor` | 1, 2, b3, 4, 5, b6, b7 |
+| `harmonic minor` | 1, 2, b3, 4, 5, b6, 7 |
+| `melodic minor` | 1, 2, b3, 4, 5, 6, 7 |
+| `pentatonic major` | 1, 2, 3, 5, 6 |
+| `pentatonic minor` | 1, b3, 4, 5, b7 |
+| `blues` | 1, b3, 4, b5, 5, b7 |
+
 ## Parameters
 
 | Parameter | Description | Default |
@@ -154,6 +183,10 @@ print(f"Processed {summary['processed']} files in {summary['total_time']:.1f}s")
 | `rms_mix_rate` | RMS mixing rate (1.0 = full original RMS) | `0.25` |
 | `protect` | Voiceless consonant protection (0.0-0.5) | `0.33` |
 | `crepe_hop_length` | Hop length for CREPE-based methods | `128` |
+| `f0_autotune` | Enable autotune (snap pitch to scale) | `False` |
+| `f0_autotune_strength` | Autotune correction strength (0.0-1.0) | `1.0` |
+| `autotune_key` | Musical key (`"C"`, `"F#"`, `"Bb"`, etc.) | `None` (chromatic) |
+| `autotune_scale` | Scale (`"major"`, `"minor"`, `"blues"`, `"pentatonic major"`, etc.) | `None` (chromatic) |
 
 ## Google Colab Demo
 
@@ -170,6 +203,7 @@ The notebook covers the full workflow:
 - Download HuBERT + F0 predictor models automatically
 - Upload or link your RVC voice model
 - Single file inference with adjustable parameters (sliders)
+- Autotune with key + scale selection
 - Batch folder inference (upload ZIP or multiple files, download results as ZIP)
 - In-notebook audio playback of converted files
 

@@ -99,6 +99,10 @@ class VC(object):
         filter_radius,
         crepe_hop_length,
         inp_f0=None,
+        f0_autotune=False,
+        f0_autotune_strength=1.0,
+        autotune_key=None,
+        autotune_scale=None,
     ):
         # Methods supported by predictor.generator.Generator
         generator_methods = F0_GENERATOR_METHODS
@@ -112,6 +116,10 @@ class VC(object):
                 f0_up_key=f0_up_key,
                 p_len=p_len,
                 filter_radius=filter_radius,
+                f0_autotune=f0_autotune,
+                f0_autotune_strength=f0_autotune_strength,
+                autotune_key=autotune_key,
+                autotune_scale=autotune_scale,
             )
 
             f0bak = f0_raw.copy()
@@ -438,6 +446,10 @@ class VC(object):
         protect,
         crepe_hop_length,
         f0_file=None,
+        f0_autotune=False,
+        f0_autotune_strength=1.0,
+        autotune_key=None,
+        autotune_scale=None,
     ):
         if (
             file_index != ""
@@ -497,6 +509,10 @@ class VC(object):
                 filter_radius,
                 crepe_hop_length,
                 inp_f0,
+                f0_autotune=f0_autotune,
+                f0_autotune_strength=f0_autotune_strength,
+                autotune_key=autotune_key,
+                autotune_scale=autotune_scale,
             )
             pitch = pitch[:p_len]
             pitchf = pitchf[:p_len]

@@ -128,16 +128,16 @@ def get_vc(device, is_half, config, model_path):
     return cpt, version, net_g, tgt_sr, vc
 
 
-def rvc_infer(index_path, index_rate, input_path, output_path, pitch_change, f0_method, cpt, version, net_g, filter_radius, tgt_sr, rms_mix_rate, protect, crepe_hop_length, vc, hubert_model):
+def rvc_infer(index_path, index_rate, input_path, output_path, pitch_change, f0_method, cpt, version, net_g, filter_radius, tgt_sr, rms_mix_rate, protect, crepe_hop_length, vc, hubert_model, f0_autotune=False, f0_autotune_strength=1.0, autotune_key=None, autotune_scale=None):
     from main.config.variable import SAMPLE_RATE
     audio = load_audio(input_path, SAMPLE_RATE)
     times = [0, 0, 0]
     if_f0 = cpt.get('f0', 1)
-    audio_opt = vc.pipeline(hubert_model, net_g, 0, audio, input_path, times, pitch_change, f0_method, index_path, index_rate, if_f0, filter_radius, tgt_sr, 0, rms_mix_rate, version, protect, crepe_hop_length)
+    audio_opt = vc.pipeline(hubert_model, net_g, 0, audio, input_path, times, pitch_change, f0_method, index_path, index_rate, if_f0, filter_radius, tgt_sr, 0, rms_mix_rate, version, protect, crepe_hop_length, f0_autotune=f0_autotune, f0_autotune_strength=f0_autotune_strength, autotune_key=autotune_key, autotune_scale=autotune_scale)
     wavfile.write(output_path, tgt_sr, audio_opt)
 
 
-def rvc_infer_batch(index_path, index_rate, input_path, output_path, pitch_change, f0_method, cpt, version, net_g, filter_radius, tgt_sr, rms_mix_rate, protect, crepe_hop_length, vc, hubert_model):
+def rvc_infer_batch(index_path, index_rate, input_path, output_path, pitch_change, f0_method, cpt, version, net_g, filter_radius, tgt_sr, rms_mix_rate, protect, crepe_hop_length, vc, hubert_model, f0_autotune=False, f0_autotune_strength=1.0, autotune_key=None, autotune_scale=None):
     """Batch inference: process a single file or all audio files in a folder.
 
     Args:
@@ -160,6 +160,8 @@ def rvc_infer_batch(index_path, index_rate, input_path, output_path, pitch_chang
             pitch_change, f0_method, cpt, version, net_g,
             filter_radius, tgt_sr, rms_mix_rate, protect,
             crepe_hop_length, vc, hubert_model,
+            f0_autotune=f0_autotune, f0_autotune_strength=f0_autotune_strength,
+            autotune_key=autotune_key, autotune_scale=autotune_scale,
         )
         return {"processed": 1, "failed": 0, "skipped": 0, "total_time": 0}
 
@@ -205,6 +207,8 @@ def rvc_infer_batch(index_path, index_rate, input_path, output_path, pitch_chang
                 pitch_change, f0_method, cpt, version, net_g,
                 filter_radius, tgt_sr, rms_mix_rate, protect,
                 crepe_hop_length, vc, hubert_model,
+                f0_autotune=f0_autotune, f0_autotune_strength=f0_autotune_strength,
+                autotune_key=autotune_key, autotune_scale=autotune_scale,
             )
             elapsed = time.time() - file_start
             print(f"-> Done ({elapsed:.2f}s)")

@@ -65,7 +65,22 @@ F0_ALL_METHODS = [
     "fcpe", "fcpe-legacy", "rmvpe-legacy", "swipe", "pm", "harvest", "dio", "yin", "pyin", "djcm",
 ]
 
-# ─── Autotune reference frequencies ───
+# ─── Autotune ───
+
+AUTOTUNE_KEYS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+
+AUTOTUNE_SCALES = {
+    "chromatic":        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+    "major":            [0, 2, 4, 5, 7, 9, 11],
+    "minor":            [0, 2, 3, 5, 7, 8, 10],
+    "harmonic minor":   [0, 2, 3, 5, 7, 8, 11],
+    "melodic minor":    [0, 2, 3, 5, 7, 9, 11],
+    "pentatonic major": [0, 2, 4, 7, 9],
+    "pentatonic minor": [0, 3, 5, 7, 10],
+    "blues":            [0, 3, 5, 6, 7, 10],
+}
+
+# Autotune reference frequencies (G1 to C6, 12 semitones per octave)
 
 REF_FREQS = [
     49.00, 51.91, 55.00, 58.27, 61.74, 65.41, 69.30, 73.42, 77.78, 82.41,
