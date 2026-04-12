@@ -171,7 +171,7 @@ with gr.Blocks(title="RVC-Batch", analytics_enabled=False) as demo:
     audio_out = gr.Audio(label="Output audio", type="numpy")
     infer_info = gr.Textbox(label="Info", interactive=False)
 
-    btn_load.click(load_models, [voice_model, f0_method], load_status)
+    btn_load.click(load_models, [rvc_model, f0_method], load_status)
     btn_infer.click(inference,
         [audio_in, pitch_change, f0_method, index_rate, filter_radius, rms_mix_rate, protect, f0_autotune, autotune_strength, autotune_key, autotune_scale],
         [audio_out, infer_info],
