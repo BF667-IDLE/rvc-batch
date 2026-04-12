@@ -15,7 +15,7 @@ cpt = version = net_g = tgt_sr = vc = None
 F0_METHODS = F0_ALL_METHODS
 AUTOTUNE_SCALE_NAMES = list(AUTOTUNE_SCALES.keys())
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.getcwd()
 
 rvc_models_dir = os.path.join(BASE_DIR, 'models')
 
