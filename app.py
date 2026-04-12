@@ -15,8 +15,55 @@ cpt = version = net_g = tgt_sr = vc = None
 F0_METHODS = F0_ALL_METHODS
 AUTOTUNE_SCALE_NAMES = list(AUTOTUNE_SCALES.keys())
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-def load_models(model_path, index_path, f0_method):
+rvc_models_dir = os.path.join(BASE_DIR, 'models')
+
+
+def display_progress(message, percent, is_webui, progress=None):
+    if is_webui:
+        progress(percent, desc=message)
+    else:
+        print(message)
+
+
+
+
+def raise_exception(error_msg, is_webui):
+    if is_webui:
+        raise gr.Error(error_msg)
+    else:
+        raise Exception(error_msg)
+
+
+
+
+def get_rvc_model(voice_model, is_webui):
+    rvc_model_filename, rvc_index_filename = None, None
+    model_dir = os.path.join(rvc_models_dir, voice_model)
+    for file in os.listdir(model_dir):
+        ext = os.path.splitext(file)[1]
+        if ext == '.pth':
+            rvc_model_filename = file
+        if ext == '.index':
+            rvc_index_filename = file
+
+    if rvc_model_filename is None:
+        error_msg = f'No model file exists in {model_dir}.'
+        raise_exception(error_msg, is_webui)
+
+    return os.path.join(model_dir, rvc_model_filename), os.path.join(model_dir, rvc_index_filename) if rvc_index_filename else ''
+
+
+
+def update_list():
+    models_l = get_current_models(rvc_models_dir)
+    return gr.update(choices=models_l)
+
+
+
+def load_models(voice_model, f0_method):
+    model_path, index_path  = get_rvc_model(voice_model, is_webui)
     global hubert_model, cpt, version, net_g, tgt_sr, vc
 
     if not model_path:
@@ -86,14 +133,16 @@ def inference(audio, pitch_change, f0_method, index_rate, filter_radius, rms_mix
     info = f"Done in {elapsed:.1f}s | {version} | {tgt_sr}Hz | {f0_method}{at_info}"
     return (tgt_sr, data), info
 
+voice_models = get_current_models(rvc_models_dir)
 
 with gr.Blocks(title="RVC-Batch", analytics_enabled=False) as demo:
     gr.Markdown("# RVC-Batch Voice Conversion")
 
     gr.Markdown("### 1. Load Voice Model")
     with gr.Row():
-        model_path = gr.Textbox(label="Model path (.pth)", placeholder="models/your_model.pth", scale=3)
-        index_path = gr.Textbox(label="Index path (.index)", placeholder="models/your_index.index", scale=3)
+        rvc_model = gr.Dropdown(voice_models, label='Voice Models', info='Models folder "rvc-batch --> rvc_models". After new models are added into this folder, click the refresh button')
+        ref_btn = gr.Button('Refresh Models 🔁', variant='primary')
+        ref_btn.click(update_models_list, None, outputs=rvc_model)
     with gr.Row():
         f0_method = gr.Dropdown(F0_METHODS, value="rmvpe", label="F0 method")
         btn_load = gr.Button("Load Model", variant="primary")
@@ -116,7 +165,7 @@ with gr.Blocks(title="RVC-Batch", analytics_enabled=False) as demo:
     audio_out = gr.Audio(label="Output audio", type="numpy")
     infer_info = gr.Textbox(label="Info", interactive=False)
 
-    btn_load.click(load_models, [model_path, index_path, f0_method], load_status)
+    btn_load.click(load_models, [voice_model, f0_method], load_status)
     btn_infer.click(inference,
         [audio_in, pitch_change, f0_method, index_rate, filter_radius, rms_mix_rate, protect, f0_autotune, autotune_strength, autotune_key, autotune_scale],
         [audio_out, infer_info],
