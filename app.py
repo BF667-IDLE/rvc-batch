@@ -2,6 +2,7 @@ import os
 import time
 import torch
 import gradio as gr
+import argparse
 
 from main.infer.infer import Config, load_hubert, get_vc, rvc_infer
 from main.utils import check_predictors, check_embedders, load_audio
@@ -89,33 +90,31 @@ def inference(audio, pitch_change, f0_method, index_rate, filter_radius, rms_mix
 with gr.Blocks(title="RVC-Batch", analytics_enabled=False) as demo:
     gr.Markdown("# RVC-Batch Voice Conversion")
 
-    with gr.Group():
-        gr.Markdown("### 1. Load Voice Model")
-        with gr.Row():
-            model_path = gr.Textbox(label="Model path (.pth)", placeholder="models/your_model.pth", scale=3)
-            index_path = gr.Textbox(label="Index path (.index)", placeholder="models/your_index.index", scale=3)
-        with gr.Row():
-            f0_method = gr.Dropdown(F0_METHODS, value="rmvpe", label="F0 method")
-            btn_load = gr.Button("Load Model", variant="primary")
-        load_status = gr.Textbox(label="Status", interactive=False)
+    gr.Markdown("### 1. Load Voice Model")
+    with gr.Row():
+        model_path = gr.Textbox(label="Model path (.pth)", placeholder="models/your_model.pth", scale=3)
+        index_path = gr.Textbox(label="Index path (.index)", placeholder="models/your_index.index", scale=3)
+    with gr.Row():
+        f0_method = gr.Dropdown(F0_METHODS, value="rmvpe", label="F0 method")
+        btn_load = gr.Button("Load Model", variant="primary")
+    load_status = gr.Textbox(label="Status", interactive=False)
 
-    with gr.Group():
-        gr.Markdown("### 2. Inference")
-        audio_in = gr.Audio(label="Input audio", type="numpy")
-        with gr.Row():
-            pitch_change = gr.Slider(-12, 12, value=0, step=1, label="Pitch")
-            index_rate = gr.Slider(0, 1, value=0.75, step=0.05, label="Index rate")
-            filter_radius = gr.Slider(0, 7, value=3, step=1, label="Filter radius")
-            rms_mix_rate = gr.Slider(0, 1, value=0.25, step=0.05, label="RMS mix rate")
-            protect = gr.Slider(0, 0.5, value=0.33, step=0.01, label="Protect")
-        with gr.Row():
-            f0_autotune = gr.Checkbox(label="Autotune", value=False)
-            autotune_strength = gr.Slider(0, 1, value=1.0, step=0.05, label="Autotune Strength")
-            autotune_key = gr.Dropdown(["Auto"] + AUTOTUNE_KEYS, value="Auto", label="Key", interactive=True)
-            autotune_scale = gr.Dropdown(AUTOTUNE_SCALE_NAMES, value="major", label="Scale", interactive=True)
-        btn_infer = gr.Button("Convert", variant="primary")
-        audio_out = gr.Audio(label="Output audio", type="numpy")
-        infer_info = gr.Textbox(label="Info", interactive=False)
+    gr.Markdown("### 2. Inference")
+    audio_in = gr.Audio(label="Input audio", type="numpy")
+    with gr.Row():
+        pitch_change = gr.Slider(-12, 12, value=0, step=1, label="Pitch")
+        index_rate = gr.Slider(0, 1, value=0.75, step=0.05, label="Index rate")
+        filter_radius = gr.Slider(0, 7, value=3, step=1, label="Filter radius")
+        rms_mix_rate = gr.Slider(0, 1, value=0.25, step=0.05, label="RMS mix rate")
+        protect = gr.Slider(0, 0.5, value=0.33, step=0.01, label="Protect")
+    with gr.Row():
+        f0_autotune = gr.Checkbox(label="Autotune", value=False)
+        autotune_strength = gr.Slider(0, 1, value=1.0, step=0.05, label="Autotune Strength")
+        autotune_key = gr.Dropdown(["Auto"] + AUTOTUNE_KEYS, value="Auto", label="Key", interactive=True)
+        autotune_scale = gr.Dropdown(AUTOTUNE_SCALE_NAMES, value="major", label="Scale", interactive=True)
+    btn_infer = gr.Button("Convert", variant="primary")
+    audio_out = gr.Audio(label="Output audio", type="numpy")
+    infer_info = gr.Textbox(label="Info", interactive=False)
 
     btn_load.click(load_models, [model_path, index_path, f0_method], load_status)
     btn_infer.click(inference,
@@ -125,4 +124,8 @@ with gr.Blocks(title="RVC-Batch", analytics_enabled=False) as demo:
 
 
 if __name__ == "__main__":
-    demo.launch(share=True)
+    parser = argparse.ArgumentParser(description="RVC-Batch Voice Conversion Web UI")
+    parser.add_argument("-s", "--share", action="store_true", help="Enable Gradio share link")
+    args = parser.parse_args()
+    
+    demo.launch(share=args.share)
