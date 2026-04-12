@@ -55,6 +55,12 @@ def get_rvc_model(voice_model, is_webui):
     return os.path.join(model_dir, rvc_model_filename), os.path.join(model_dir, rvc_index_filename) if rvc_index_filename else ''
 
 
+def get_current_models(models_dir):
+    models_list = os.listdir(models_dir)
+    items_to_remove = ['hubert_base.pt', 'rmvpe.pt']
+    return [item for item in models_list if item not in items_to_remove]
+
+
 
 def update_list():
     models_l = get_current_models(rvc_models_dir)
@@ -142,7 +148,7 @@ with gr.Blocks(title="RVC-Batch", analytics_enabled=False) as demo:
     with gr.Row():
         rvc_model = gr.Dropdown(voice_models, label='Voice Models', info='Models folder "rvc-batch --> rvc_models". After new models are added into this folder, click the refresh button')
         ref_btn = gr.Button('Refresh Models 🔁', variant='primary')
-        ref_btn.click(update_models_list, None, outputs=rvc_model)
+        ref_btn.click(update_list, None, outputs=rvc_model)
     with gr.Row():
         f0_method = gr.Dropdown(F0_METHODS, value="rmvpe", label="F0 method")
         btn_load = gr.Button("Load Model", variant="primary")
