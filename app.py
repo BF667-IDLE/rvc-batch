@@ -20,25 +20,21 @@ BASE_DIR = os.getcwd()
 rvc_models_dir = os.path.join(BASE_DIR, 'models')
 
 
-def display_progress(message, percent, is_webui, progress=None):
-    if is_webui:
-        progress(percent, desc=message)
-    else:
-        print(message)
+def display_progress(message, percent, progress=None):
+    progress(percent, desc=message)
+    print(message)
 
 
 
 
-def raise_exception(error_msg, is_webui):
-    if is_webui:
-        raise gr.Error(error_msg)
-    else:
-        raise Exception(error_msg)
+def raise_exception(error_msg):
+    raise gr.Error(error_msg)
+    raise Exception(error_msg)
 
 
 
 
-def get_rvc_model(voice_model, is_webui):
+def get_rvc_model(voice_model):
     rvc_model_filename, rvc_index_filename = None, None
     model_dir = os.path.join(rvc_models_dir, voice_model)
     for file in os.listdir(model_dir):
@@ -68,8 +64,8 @@ def update_list():
 
 
 
-def load_models(voice_model, f0_method):
-    model_path, index_path  = get_rvc_model(voice_model, is_webui)
+def load_models(voice_model):
+    model_path, index_path  = get_rvc_model(voice_model)
     global hubert_model, cpt, version, net_g, tgt_sr, vc
 
     if not model_path:
