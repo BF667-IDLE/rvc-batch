@@ -6,9 +6,9 @@ import torch
 import gradio as gr
 import argparse
 
-from main.infer.infer import Config, load_hubert, get_vc, rvc_infer, rvc_infer_batch
-from main.utils import check_predictors, check_embedders, load_audio
-from main.config.variable import F0_ALL_METHODS, AUTOTUNE_KEYS, AUTOTUNE_SCALES, SUPPORTED_EXTENSIONS
+from rvc_batch.infer.infer import Config, load_hubert, get_vc, rvc_infer, rvc_infer_batch
+from rvc_batch.utils import check_predictors, check_embedders, load_audio
+from rvc_batch.config.variable import F0_ALL_METHODS, AUTOTUNE_KEYS, AUTOTUNE_SCALES, SUPPORTED_EXTENSIONS, MODELS_DIR
 
 # --- Globals ---
 hubert_model = None
@@ -18,9 +18,6 @@ current_is_half = None
 
 F0_METHODS = F0_ALL_METHODS
 AUTOTUNE_SCALE_NAMES = list(AUTOTUNE_SCALES.keys())
-
-BASE_DIR = os.getcwd()
-rvc_models_dir = os.path.join(BASE_DIR, "models")
 
 
 # --- Helper Functions ---
@@ -49,7 +46,7 @@ def get_device_info():
 
 def get_rvc_model_paths(voice_model):
     """Resolve .pth and .index files for a given voice model directory."""
-    model_dir = os.path.join(rvc_models_dir, voice_model)
+    model_dir = os.path.join(MODELS_DIR, voice_model)
     if not os.path.isdir(model_dir):
         raise FileNotFoundError(f"Model directory not found: {model_dir}")
 
@@ -87,7 +84,7 @@ def get_current_models(models_dir):
 
 def update_model_list():
     """Refresh the model dropdown."""
-    models_list = get_current_models(rvc_models_dir)
+    models_list = get_current_models(MODELS_DIR)
     return gr.update(choices=models_list, value=models_list[0] if models_list else None)
 
 
@@ -103,7 +100,7 @@ def load_models(voice_model, f0_method):
 
     model_path, index_path = get_rvc_model_paths(voice_model)
 
-    os.makedirs("models", exist_ok=True)
+    os.makedirs(MODELS_DIR, exist_ok=True)
 
     device, is_half = get_device_config()
     current_device = device
@@ -116,7 +113,8 @@ def load_models(voice_model, f0_method):
     if f0_method:
         check_predictors(f0_method)
 
-    hubert_model = load_hubert(device, is_half, "models/hubert_base.pt")
+    hubert_path = os.path.join(MODELS_DIR, "hubert_base.pt")
+    hubert_model = load_hubert(device, is_half, hubert_path)
     cpt, version, net_g, tgt_sr, vc = get_vc(device, is_half, config, model_path)
 
     index_info = f" + index" if index_path else ""
@@ -211,7 +209,7 @@ def batch_inference(input_folder, output_folder, pitch_change, f0_method, index_
         filter_radius=filter_radius, tgt_sr=tgt_sr,
         rms_mix_rate=rms_mix_rate, protect=protect,
         crepe_hop_length=128, vc=vc, hubert_model=hubert_model,
-        f0_autotune=f0_autotune, f0_autotune_strength=autotune_strength,
+        f0_autotune=f0_autotune, f0_autotune_strength=f0_autotune_strength,
         autotune_key=at_key, autotune_scale=at_scale,
     )
     elapsed = time.time() - t0
@@ -239,7 +237,7 @@ def upload_model(model_file, model_index, model_name):
     if not model_name or not model_name.strip():
         model_name = os.path.splitext(os.path.basename(model_file))[0]
 
-    model_dir = os.path.join(rvc_models_dir, model_name.strip())
+    model_dir = os.path.join(MODELS_DIR, model_name.strip())
     os.makedirs(model_dir, exist_ok=True)
 
     dest_path = os.path.join(model_dir, os.path.basename(model_file))
@@ -250,7 +248,7 @@ def upload_model(model_file, model_index, model_name):
         index_dest = os.path.join(model_dir, os.path.basename(model_index))
         shutil.copy2(model_index, index_dest)
 
-    models_list = get_current_models(rvc_models_dir)
+    models_list = get_current_models(MODELS_DIR)
     return (
         gr.update(choices=models_list, value=model_name.strip()),
         f"Model uploaded: {model_name.strip()} ({os.path.basename(model_file)})"
@@ -265,7 +263,7 @@ def get_device_status():
 # --- UI ---
 
 
-voice_models = get_current_models(rvc_models_dir)
+voice_models = get_current_models(MODELS_DIR)
 
 with gr.Blocks(title="RVC-Batch", analytics_enabled=False) as demo:
     gr.Markdown("# RVC-Batch Voice Conversion")

@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rvc-batch"
+version = "0.1.0"
+description = "Simplified RVC voice conversion with batch processing, autotune, and pip-installable packaging."
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.9"
+authors = [
+    {name = "BF667-IDLE"},
+]
+keywords = ["rvc", "voice-conversion", "ai-voice", "batch-processing", "autotune"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+]
+
+dependencies = [
+    "torch>=2.0",
+    "torchaudio>=2.0",
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "librosa>=0.10",
+    "soundfile>=0.12",
+    "faiss-cpu>=1.7",
+    "requests>=2.28",
+    "numba>=0.57",
+    "praat-parselmouth>=0.4",
+    "pyworld>=0.3",
+    "matplotlib>=3.7",
+    "omegaconf>=2.3",
+    "einops>=0.7",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "build>=0.10",
+]
+gui = [
+    "gradio>=3.0",
+]
+
+[project.scripts]
+rvc-batch = "rvc_batch.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+rvc_batch = ["**/*.pt", "**/*.pth", "**/*.index"]
