@@ -5,7 +5,7 @@ Simplified RVC (Retrieval-based Voice Conversion) with batch processing, autotun
 ## Install
 
 ```bash
-pip install rvc-batch
+pip install git+https://github.com/BF667-IDLE/rvc-batch.git
 ```
 
 Or install from source:
