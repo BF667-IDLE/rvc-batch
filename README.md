@@ -2,6 +2,8 @@
 
 Simplified RVC (Retrieval-based Voice Conversion) with batch processing, autotune, and pip-installable packaging.
 
+open in colab [here](https://colab.research.google.com/github/BF667-IDLE/rvc-batch/blob/main/rvc_batch_demo.ipynb)
+
 ## Install
 
 ```bash
