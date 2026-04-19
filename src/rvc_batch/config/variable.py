@@ -8,6 +8,7 @@ import os as _os
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PROJECT_DIR = os.path.dirname(BASE_DIR)
+MAIN_DIR = BASE_DIR
 
 # Models directory: configurable via RVC_MODELS_DIR env var, defaults to ./models
 MODELS_DIR = os.environ.get("RVC_MODELS_DIR", os.path.join(os.getcwd(), "models"))
