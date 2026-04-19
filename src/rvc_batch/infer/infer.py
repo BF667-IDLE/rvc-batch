@@ -128,8 +128,23 @@ def get_vc(device, is_half, config, model_path):
     return cpt, version, net_g, tgt_sr, vc
 
 
+def _ensure_hubert_loaded(hubert_model, device, is_half):
+    """Auto-load HuBERT base model if not already provided."""
+    if hubert_model is not None:
+        return hubert_model
+
+    from rvc_batch.utils import check_embedders
+    from rvc_batch.config.variable import MODELS_DIR
+
+    print("HuBERT model not provided — auto-loading HuBERT base model...")
+    check_embedders()
+    hubert_path = os.path.join(MODELS_DIR, "hubert_base.pt")
+    return load_hubert(device, is_half, hubert_path)
+
+
 def rvc_infer(index_path, index_rate, input_path, output_path, pitch_change, f0_method, cpt, version, net_g, filter_radius, tgt_sr, rms_mix_rate, protect, crepe_hop_length, vc, hubert_model, f0_autotune=False, f0_autotune_strength=1.0, autotune_key=None, autotune_scale=None):
     from rvc_batch.config.variable import SAMPLE_RATE
+    hubert_model = _ensure_hubert_loaded(hubert_model, vc.device, vc.is_half)
     audio = load_audio(input_path, SAMPLE_RATE)
     times = [0, 0, 0]
     if_f0 = cpt.get('f0', 1)

@@ -20,8 +20,6 @@ from rvc_batch.config.variable import (
     MAX_INT16, HUBERT_V1_OUTPUT_LAYER, HUBERT_V2_OUTPUT_LAYER, FEATURE_SCALE_FACTOR,
 )
 
-sys.path.append(MAIN_DIR)
-
 
 from rvc_batch.predictor.generator import Generator
 

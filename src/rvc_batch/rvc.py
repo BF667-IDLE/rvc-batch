@@ -32,6 +32,9 @@ class RVC:
     Supports single-file and batch (folder) conversion, with optional
     pitch shifting, autotune, and FAISS index-based feature matching.
 
+    The HuBERT base model is automatically downloaded (if missing) and
+    loaded on first inference call, keeping startup fast.
+
     Args:
         model_path: Path to a .pth voice model file.
         index_path: Optional path to a .index FAISS file.
@@ -69,13 +72,14 @@ class RVC:
         else:
             is_half = is_half if is_half is not None else True
 
-        # Download required models
-        check_embedders()
+        # Download required predictor models upfront
         check_predictors(f0_method)
 
         config = Config(device, is_half)
-        hubert_path = os.path.join(MODELS_DIR, "hubert_base.pt")
-        self.hubert_model = load_hubert(device, is_half, hubert_path)
+
+        self.hubert_model = None  # Lazy-loaded on first inference
+        self._device = device
+        self._is_half = is_half
 
         self.cpt, self.version, self.net_g, self.tgt_sr, self.vc = get_vc(
             device, is_half, config, model_path
@@ -83,6 +87,22 @@ class RVC:
 
         self.device = device
         self.is_half = is_half
+
+    def _ensure_hubert(self):
+        """Auto-load HuBERT base model if not already loaded.
+
+        Downloads the model file if it does not exist, then loads it
+        into memory.  Called automatically before every inference pass
+        so the user never has to worry about it.
+        """
+        if self.hubert_model is not None:
+            return
+
+        print("Loading HuBERT base model...")
+        check_embedders()
+        hubert_path = os.path.join(MODELS_DIR, "hubert_base.pt")
+        self.hubert_model = load_hubert(self._device, self._is_half, hubert_path)
+        print("HuBERT base model loaded.")
 
     def convert(self, input_path, output_path, pitch_change=0,
                 index_rate=0.75, filter_radius=3, rms_mix_rate=0.25,
@@ -93,9 +113,14 @@ class RVC:
         If input_path is a folder, all supported audio files inside are
         converted and saved to output_path (also a folder).
 
+        The HuBERT base model is automatically loaded on the first call
+        if it has not been loaded yet.
+
         Returns a dict with 'processed', 'failed', 'skipped' counts
         for batch mode, or None for single-file mode.
         """
+        self._ensure_hubert()
+
         if os.path.isdir(input_path):
             return rvc_infer_batch(
                 index_path=self.index_path,
